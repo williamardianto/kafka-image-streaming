@@ -1,3 +1,5 @@
+package Example;
+
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -14,8 +16,8 @@ import java.util.Properties;
 
 import static org.bytedeco.opencv.global.opencv_imgproc.resize;
 
-public class ImageProducer {
-    static Logger log = LoggerFactory.getLogger(ImageProducer.class);
+public class VideoProducer {
+    static Logger log = LoggerFactory.getLogger(VideoProducer.class);
 
     static String KAFKA_BROKERS = "localhost:9093";
 
