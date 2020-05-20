@@ -6,6 +6,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.javacv.CanvasFrame;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.OpenCVFrameConverter;
 import org.bytedeco.opencv.opencv_core.Mat;
@@ -20,14 +21,17 @@ import java.util.Properties;
 import static org.opencv.core.CvType.CV_8UC;
 
 public class WebcamConsumer {
-    static String KAFKA_BROKERS = "localhost:9093";
+    static String KAFKA_BROKERS = "10.10.10.23:9093";
     static Logger log = LoggerFactory.getLogger(WebcamConsumer.class);
 
     static String GROUPID = "smart-retail";
-    static String TOPIC = "image3";
+    static String TOPIC = "image1";
 
-    static int WIDTH = 960;
-    static int HEIGHT = 540;
+//    static int WIDTH = 960;
+//    static int HEIGHT = 540;
+
+    static int WIDTH = 640;
+    static int HEIGHT = 480;
 
     public static void main(String[] args) {
         Properties properties = new Properties();
@@ -42,8 +46,8 @@ public class WebcamConsumer {
 
         consumer.subscribe(Collections.singleton(TOPIC));
 
-//        CanvasFrame canvas = new CanvasFrame("Consumer Canvas");
-//        canvas.setCanvasSize(WIDTH, HEIGHT);
+        CanvasFrame canvas = new CanvasFrame("Consumer Canvas");
+        canvas.setCanvasSize(WIDTH, HEIGHT);
 
         OpenCVFrameConverter.ToMat converter = new OpenCVFrameConverter.ToMat();
 
@@ -57,22 +61,22 @@ public class WebcamConsumer {
                         "Partition:" + record.partition() + "\n" +
                         "Offset: " + record.offset() + "\n" +
                         "Timestamp: " + record.timestamp() + "\n" +
-                        "Date: " + new Date(record.timestamp())+ "\n" +
-                        "Bytes size: "+ record.value().length
+                        "Date: " + new Date(record.timestamp()) + "\n" +
+                        "Bytes size: " + record.value().length
                 );
 
                 Mat mat = BytesToMat(record.value());
                 Frame frame = converter.convert(mat);
-//                canvas.showImage(frame);
+                canvas.showImage(frame);
             });
         }
     }
 
     static Mat BytesToMat(byte[] b) {
-        Mat mat ;
-            try{
-            mat =  new Mat(HEIGHT, WIDTH, CV_8UC(3), new BytePointer(b));
-        }catch (Exception ex){
+        Mat mat;
+        try {
+            mat = new Mat(HEIGHT, WIDTH, CV_8UC(3), new BytePointer(b));
+        } catch (Exception ex) {
             mat = null;
             log.error(ex.getMessage());
         }

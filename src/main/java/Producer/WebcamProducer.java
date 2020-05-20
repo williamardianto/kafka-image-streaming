@@ -5,19 +5,26 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.bytedeco.javacv.*;
 import org.bytedeco.opencv.opencv_core.Mat;
+import org.bytedeco.opencv.opencv_core.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.Properties;
+
+import static org.bytedeco.opencv.global.opencv_imgproc.resize;
 
 public class WebcamProducer {
     static Logger log = LoggerFactory.getLogger(WebcamProducer.class);
 
-    static String KAFKA_BROKERS = "localhost:9093";
-    static String TOPIC = "image3";
+    static String KAFKA_BROKERS = "10.10.10.23:9093";
+    static String TOPIC = "image1";
 
-    static int WIDTH = 960;
-    static int HEIGHT = 540;
+//    static int WIDTH = 960;
+//    static int HEIGHT = 540;
+
+    static int WIDTH = 640;
+    static int HEIGHT = 480;
 
     public static void main(String[] args) {
 
@@ -29,20 +36,20 @@ public class WebcamProducer {
         properties.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, "2097152");
         properties.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
 
-//        KafkaProducer<String, byte[]> producer = new KafkaProducer<>(properties);
+        KafkaProducer<String, byte[]> producer = new KafkaProducer<>(properties);
 
         OpenCVFrameConverter.ToMat converter = new OpenCVFrameConverter.ToMat();
 
         try (OpenCVFrameGrabber grabber = new OpenCVFrameGrabber(0)) {
-            grabber.setImageWidth(WIDTH);
-            grabber.setImageHeight(HEIGHT);
+//            grabber.setImageWidth(WIDTH);
+//            grabber.setImageHeight(HEIGHT);
 
             grabber.start();
 
             Frame frame;
 
             CanvasFrame canvasFrame = new CanvasFrame("Cam");
-            canvasFrame.setCanvasSize(WIDTH, HEIGHT);
+//            canvasFrame.setCanvasSize(WIDTH, HEIGHT);
 
             log.info("frame rate: " + grabber.getFrameRate() + "\n" +
                     "frame width: " + grabber.getImageWidth() + "\n" +
@@ -50,19 +57,19 @@ public class WebcamProducer {
             );
 
             while (canvasFrame.isVisible() && (frame = grabber.grab()) != null) {
-                canvasFrame.showImage(frame);
-
                 Mat frameMat = converter.convert(frame);
-//                resize(frameMat, frameMat, new Size(WIDTH, HEIGHT));
+                resize(frameMat, frameMat, new Size(WIDTH, HEIGHT));
 
 //                canvasFrame.showImage(converter.convert(frameMat));
 
                 byte[] frameBytes = MatToBytes(frameMat);
 
-                ProducerRecord<String, byte[]> record = new ProducerRecord<>(TOPIC, frameBytes);
-//                producer.send(record, new ProducerCallback());
+                log.info(String.valueOf(frameBytes.length));
 
-                log.info(String.valueOf(frameMat.cols()));
+                ProducerRecord<String, byte[]> record = new ProducerRecord<>(TOPIC, frameBytes);
+                producer.send(record, new ProducerCallback());
+
+//                log.info(String.valueOf(frameMat.cols()));
                 Thread.sleep(1000);
             }
 
@@ -70,6 +77,7 @@ public class WebcamProducer {
             log.error(e.getMessage());
         }
     }
+
 
     private static byte[] MatToBytes(Mat mat) {
         byte[] b = new byte[mat.channels() * mat.cols() * mat.rows()];
@@ -86,7 +94,10 @@ public class WebcamProducer {
                         "Topic:" + recordMetadata.topic() + "\n" +
                         "Partition:" + recordMetadata.partition() + "\n" +
                         "Offset: " + recordMetadata.offset() + "\n" +
-                        "Timestamp: " + recordMetadata.timestamp());
+                        "Timestamp: " + recordMetadata.timestamp() + "\n" +
+                        "Date: " + new Date(recordMetadata.timestamp()) + "\n" +
+                        "Bytes size: " + recordMetadata.serializedValueSize()
+                );
             } else
                 log.error(e.getMessage());
         }
